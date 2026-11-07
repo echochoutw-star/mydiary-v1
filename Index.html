@@ -90,7 +90,8 @@ const firebaseConfig = {
 };
 const CLOUD_READY=!!(firebaseConfig.apiKey&&firebaseConfig.projectId);
 function getDb(){if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);return firebase.database();}
-const entriesCol=code=>getDb().collection('diaries').doc(code).collection('entries');
+const entriesRef = code => getDb().ref('diaries/' + code + '/entries');
+
 
 // ===== 每月版面設計：之後把圖片填進 img（網址或 data URI）即可 =====
 const MONTH_THEMES=[
