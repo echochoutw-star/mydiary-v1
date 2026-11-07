@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>個人日記</title>
+<style>
+:root{--bg:#faf6f0;--card:#fffdf9;--ink:#4a3f38;--sub:#9a8c80;--line:#eee4d8;--accent:#c98b6b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1b18;--card:#2a2522;--ink:#efe6dc;--sub:#a89b8f;--line:#3a332e;--accent:#d9a283}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+#root{height:100%}
+.app{max-width:430px;height:100%;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;position:relative}
+.hero{padding:18px 20px 22px;color:rgba(255,255,255,.82);background-size:cover;background-position:center;transition:background .5s;flex:none}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mh h1{font-size:17px;font-weight:300;letter-spacing:.2em;margin:0}
+.mh button{background:none;border:0;color:inherit;font-size:22px;font-weight:200;padding:4px 12px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:4px;text-align:center}
+.wd{font-size:11px;opacity:.6;padding-bottom:6px;font-weight:300}
+.day{height:38px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:300;border:0;background:none;color:inherit;cursor:pointer;border-radius:50%;font-family:inherit}
+.day.has{font-weight:800}
+.day.today{box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+.day.sel{background:rgba(255,255,255,.18)}
+.main{flex:1;overflow:auto;padding:18px 18px 28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.dt{font-size:12px;color:var(--sub);letter-spacing:.1em;margin-bottom:8px}
+.row{display:flex;gap:12px}
+.row>div{flex:1;min-width:0}
+.ttl{font-size:17px;font-weight:600;margin:0 0 6px}
+.ex{font-size:14px;line-height:1.7;color:var(--ink);opacity:.85;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0;white-space:pre-wrap}
+.thumb{width:68px;height:68px;border-radius:12px;object-fit:cover;flex:none}
+.empty{text-align:center;color:var(--sub);font-size:14px;line-height:1.9;padding:14px 0}
+.btns{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:10px 14px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.ai{margin-top:14px;padding:12px 14px;border-radius:14px;background:rgba(201,139,107,.12);font-size:14px;line-height:1.8}
+.mask{position:absolute;inset:0;background:rgba(40,30,24,.4);display:flex;align-items:flex-end;z-index:10;animation:f .2s}
+.sheet{width:100%;max-height:92%;overflow:auto;background:var(--card);border-radius:24px 24px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:u .25s}
+@keyframes f{from{opacity:0}}
+@keyframes u{from{transform:translateY(40px);opacity:0}}
+.moods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.mood{border:1px solid var(--line);background:none;color:var(--ink);border-radius:14px;padding:9px 2px;font-size:12px;cursor:pointer;font-family:inherit}
+.mood.on{background:rgba(201,139,107,.18);border-color:var(--accent)}
+.mood span{display:block;font-size:20px;margin-bottom:2px}
+.in{width:100%;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font-size:17px;padding:8px 0;margin-bottom:10px;font-family:inherit;outline:none}
+textarea.in{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px;line-height:1.8;height:150px;resize:none}
+.photo{width:100%;border-radius:14px;margin-top:10px;display:block;max-height:220px;object-fit:cover}
+.quote{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);text-align:center}
+.quote p{margin:0;font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:15px;line-height:1.6}
+.quote small{display:block;margin-top:6px;color:var(--sub);font-size:12px}
+.bar{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:10px;opacity:.9}
+.gear{background:none;border:0;color:inherit;font-size:12px;letter-spacing:.1em;cursor:pointer;padding:2px 0;font-family:inherit}
+.fld{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px}
+.fld small{display:block;line-height:1.6;margin-top:2px}
+.fld .in{color:var(--ink);font-size:15px;margin-bottom:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script>
+const {useState,useEffect}=React;
+const html=htm.bind(React.createElement);
+
+/* ================= ☁️ Firebase 設定（貼上你的設定即可啟用雲端同步）=================
+ 1. 前往 https://console.firebase.google.com 建立專案
+ 2. 左側「建構」→ Firestore Database → 建立資料庫
+ 3. 專案設定（齒輪）→ 一般 → 「您的應用程式」→ 新增網頁應用程式（</> 圖示）
+    → 把畫面上 firebaseConfig 的各欄位，複製貼到下方對應的引號裡
+ 4. Firestore 的「規則」分頁，貼上以下內容後按「發布」：
+      rules_version = '2';
+      service cloud.firestore { match /databases/{db}/documents {
+        match /diaries/{code}/entries/{id} { allow read, write: if true; }
+      } }
+ 5. 在每台裝置開啟本檔 →「⚙︎ 設定」→ 填入相同的「同步代碼」→ 儲存，即會自動雙向同步
+ （此規則沒有登入機制，同步代碼就等於密碼，請設定得長且隨機，並勿分享給他人）
+=========================================================================== */
+const firebaseConfig={
+ apiKey:'',
+ authDomain:'',
+ projectId:'',
+ storageBucket:'',
+ messagingSenderId:'',
+ appId:''
+};
+const CLOUD_READY=!!(firebaseConfig.apiKey&&firebaseConfig.projectId);
+function getDb(){if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);return firebase.firestore();}
+const entriesCol=code=>getDb().collection('diaries').doc(code).collection('entries');
+
+// ===== 每月版面設計：之後把圖片填進 img（網址或 data URI）即可 =====
+const MONTH_THEMES=[
+ {g:['#9db4c0','#d5e0e6'],img:''},{g:['#d4a5a5','#f1d9d4'],img:''},{g:['#a8c3a0','#dfeadb'],img:''},
+ {g:['#e3b7c4','#f6e1e6'],img:''},{g:['#9cc5a1','#d9ecd2'],img:''},{g:['#8fbfc9','#d3ebee'],img:''},
+ {g:['#e5b97a','#f6e3c2'],img:''},{g:['#e0a47a','#f5d8bf'],img:''},{g:['#c9b27c','#ece0bd'],img:''},
+ {g:['#c88b63','#e8c7a6'],img:''},{g:['#a89a8c','#d9cfc4'],img:''},{g:['#8c9fb5','#cfd9e4'],img:''}
+];
+const MOODS=[['😊','開心'],['🌿','平靜'],['☕','輕鬆'],['☁️','疲憊']];
+const WD=['日','一','二','三','四','五','六'];
+// 每日金句：以日期（自 1970 年起的天數）× 17 對 40 取餘數，同一天固定、連續 40 天內絕不重複
+const QUOTES=[
+ ['Today is a good day to begin again.','今天是重新開始的好日子。'],
+ ['Small steps still move you forward.','再小的一步，也是在前進。'],
+ ['You are doing better than you think.','你做得比自己想的還要好。'],
+ ['Let your heart be light, and your day will follow.','讓心輕盈，一天也會跟著輕盈。'],
+ ['Gratitude turns what we have into enough.','感恩讓我們所擁有的，剛剛好足夠。'],
+ ['Be proud of how far you’ve come.','為自己走了多遠而驕傲。'],
+ ['Breathe in calm, breathe out worry.','吸進平靜，呼出憂慮。'],
+ ['Your pace is perfectly yours.','你的步調，剛剛好屬於你。'],
+ ['Good things grow in quiet moments.','美好的事物，在安靜的時刻生長。'],
+ ['Rest is part of the journey.','休息也是旅程的一部分。'],
+ ['You may start over as many times as you need.','你可以重新開始，多少次都沒關係。'],
+ ['Kindness begins with how you speak to yourself.','善意，始於你如何對自己說話。'],
+ ['Courage is simply taking the next gentle step.','勇氣，就是邁出溫柔的下一步。'],
+ ['Even cloudy days carry a little light.','即使陰天，也帶著一絲光亮。'],
+ ['Choose joy in the ordinary.','在平凡之中選擇喜悅。'],
+ ['What you water will grow.','你澆灌的，終會成長。'],
+ ['You don’t have to be perfect to be loved.','你不必完美，也值得被愛。'],
+ ['Tomorrow is a blank page waiting for you.','明天是一張等著你的空白頁。'],
+ ['Slow progress is still progress.','緩慢的進步，依然是進步。'],
+ ['Carry hope like a small lantern.','把希望當成一盞小燈帶著走。'],
+ ['Every ending makes room for something new.','每個結束，都為新的開始騰出空間。'],
+ ['Trust the timing of your life.','相信你人生的節奏。'],
+ ['Soft hearts are strong hearts.','柔軟的心，就是堅強的心。'],
+ ['Be present; this moment is a gift.','活在當下，此刻就是禮物。'],
+ ['You are enough, just as you are today.','此刻的你，已經足夠。'],
+ ['Let go of what you can’t control.','放下你無法掌控的事。'],
+ ['Little joys make a beautiful life.','點滴的小確幸，造就美好的人生。'],
+ ['Your story is still being written.','你的故事，仍在書寫中。'],
+ ['Smile at the day, and it may smile back.','對一天微笑，它也許會回你微笑。'],
+ ['Peace begins with a deep breath.','平靜，從一次深呼吸開始。'],
+ ['Keep going; you’re closer than you think.','繼續走吧，你離目標比想像中更近。'],
+ ['Growth often feels quiet.','成長，往往靜悄悄的。'],
+ ['Make room for what makes you happy.','為讓你快樂的事騰出空間。'],
+ ['You carry more light than you know.','你身上的光，比你以為的更多。'],
+ ['Today’s effort is tomorrow’s ease.','今天的努力，是明天的輕鬆。'],
+ ['Be gentle; healing takes time.','溫柔一點，療癒需要時間。'],
+ ['Dream boldly, walk patiently.','勇敢作夢，耐心前行。'],
+ ['A grateful heart notices more beauty.','感恩的心，總能看見更多美好。'],
+ ['You have survived every hard day so far.','到目前為止，每個艱難的日子你都撐過來了。'],
+ ['End the day softly, begin it bravely.','溫柔地結束今天，勇敢地開始明天。']
+];
+function quoteFor(y,m,d){return QUOTES[(Math.floor(Date.UTC(y,m-1,d)/864e5)*17)%QUOTES.length];}
+const ADVICE={
+ '😊':['看得出今天心情很好！把這份喜悅好好收藏起來，未來低落時翻開，它會成為你的小太陽。','開心的日子值得被記住。也別忘了謝謝今天那個努力又閃閃發光的自己。'],
+ '🌿':['平靜是很珍貴的狀態。今晚早點休息，讓這份安穩陪你入睡吧。','不必急著前進，慢慢呼吸、慢慢生活，你正走在屬於自己的節奏上。'],
+ '☕':['輕鬆的一天剛剛好。偶爾放慢腳步，也是在好好照顧自己。','像一杯溫熱的咖啡，今天的你很自在。記得留點時間給喜歡的小事。'],
+ '☁️':['累了就先休息，今天不用完美。你願意把感受寫下來，已經很棒了。','雲總會散去。喝點溫熱的飲料、早點睡，明天的你會感謝現在善待自己的你。'],
+ '':['不論今天發生了什麼，你願意停下來記錄，就是在溫柔地陪伴自己。']
+};
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=(y,m,d)=>y+'-'+pad(m+1)+'-'+pad(d);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const hasContent=e=>!!e&&!!(e.title||e.text||e.photo);
+
+function compress(file){
+ return new Promise((res,rej)=>{
+  const r=new FileReader();
+  r.onerror=rej;
+  r.onload=()=>{const im=new Image();im.onerror=rej;
+   im.onload=()=>{const s=Math.min(1,800/Math.max(im.width,im.height));
+    const c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.72));};
+   im.src=r.result;};
+  r.readAsDataURL(file);
+ });
+}
+
+// 即時 AI 回饋：把標題、內文、心情交給 Claude 分析；若無法連線則退回內建溫柔語句
+function useAdvice(){
+ const [t,setT]=useState('');const [busy,setBusy]=useState(false);
+ const ask=async(d)=>{
+  const title=(d.title||'').trim(),body=(d.text||'').trim(),mood=d.mood||'';
+  if(!title&&!body&&!mood){setT('先寫下一點點什麼吧，哪怕只是選一個心情，我就能更貼近你的今天 🌿');return;}
+  setBusy(true);setT('');
+  const label=(MOODS.find(x=>x[0]===mood)||[,'未選擇'])[1];
+  try{
+   const sample=await claude.use('sample');
+   if(!sample)throw new Error('na');
+   const prompt='你是一位溫柔、具同理心、有心理療癒素養的陪伴者。請閱讀下面這則個人日記，用繁體中文寫一段 80 到 140 字的溫暖回饋：先具體呼應日記中提到的內容與情緒，再給一個小而可行的鼓勵或建議。語氣像親近的朋友，不說教、不下診斷、不使用條列或標題，只輸出回饋本身。\n\n心情：'+label+'\n標題：'+(title||'（無）')+'\n內文：'+(body||'（無）');
+   const r=await sample(prompt,{modelTier:'quick',cache:false,onText:s=>{setBusy(false);setT(s.text);}});
+   setT(r.text);
+  }catch(_){setT(pick(ADVICE[mood]||ADVICE[''])+'（目前無法連線 AI，這是備用的溫柔小語）');}
+  setBusy(false);
+ };
+ return [t,busy,ask,setT];
+}
+
+function Editor({dateKey,entry,onSave,onClose}){
+ const [d,setD]=useState({title:'',mood:'',text:'',photo:'',...entry});
+ const [adv,busy,ask]=useAdvice();
+ const set=(k,v)=>setD(p=>({...p,[k]:v}));
+ const [y,m,dd]=dateKey.split('-').map(Number);
+ const q=quoteFor(y,m,dd);
+ const onFile=async e=>{const f=e.target.files[0];if(!f)return;try{set('photo',await compress(f));}catch(_){alert('照片讀取失敗，請換一張試試');}e.target.value='';};
+ return html`<div className="mask" onClick=${onClose}>
+  <div className="sheet" onClick=${e=>e.stopPropagation()}>
+   <div className="dt">${y} 年 ${m} 月 ${dd} 日 ・ 星期${WD[new Date(y,m-1,dd).getDay()]}</div>
+   <div className="moods">${MOODS.map(([e,l])=>html`<button key=${e} className=${'mood'+(d.mood===e?' on':'')} onClick=${()=>set('mood',d.mood===e?'':e)}><span>${e}</span>${l}</button>`)}</div>
+   <input className="in" placeholder="今天的標題…" value=${d.title} onChange=${e=>set('title',e.target.value)} />
+   <textarea className="in" placeholder="寫下今天的心情與故事…" value=${d.text} onChange=${e=>set('text',e.target.value)}></textarea>
+   <div className="btns">
+    <label className="btn" style=${{textAlign:'center'}}>🖼 ${d.photo?'更換照片':'上傳照片'}<input type="file" accept="image/*" hidden onChange=${onFile} /></label>
+    <label className="btn" style=${{textAlign:'center'}}>📷 拍照<input type="file" accept="image/*" capture="environment" hidden onChange=${onFile} /></label>
+    ${d.photo&&html`<button className="btn" onClick=${()=>set('photo','')}>移除照片</button>`}
+   </div>
+   ${d.photo&&html`<img className="photo" src=${d.photo} alt="" />`}
+   <button className="btn" style=${{width:'100%',marginTop:12}} onClick=${()=>ask(d)}>✨ 請 AI 給我溫暖建議</button>
+   ${(busy||adv)&&html`<div className="ai">${busy?'AI 正在輕輕想著你的話…':adv}</div>`}
+   <div className="btns"><button className="btn" onClick=${onClose}>關閉</button><button className="btn pri" onClick=${()=>onSave(d)}>儲存</button></div>
+   <div className="quote"><p>“${q[0]}”</p><small>${q[1]}</small></div>
+  </div></div>`;
+}
+
+function Settings({code,akey,ready,onSave,onClose}){
+ const [c,setC]=useState(code),[k,setK]=useState(akey);
+ const gen=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);setC(Array.from(a,b=>b.toString(36).padStart(2,'0')).join(''));};
+ return html`<div className="mask" onClick=${onClose}><div className="sheet" onClick=${e=>e.stopPropagation()}>
+  <div className="dt">⚙︎ 設定</div>
+  <label className="fld">☁️ 雲端同步代碼
+   <input className="in" value=${c} placeholder="每台裝置填入相同代碼" onChange=${e=>setC(e.target.value.replace(/[\/\s]/g,''))} />
+   <small>${ready?'兩台裝置填入相同的代碼，日記就會自動同步。代碼等同密碼，請設長一點並妥善保管。':'尚未填寫 firebaseConfig，請依檔案開頭的說明貼入設定後，雲端同步才會啟用。'}</small>
+  </label>
+  <button className="btn" style=${{width:'100%'}} onClick=${gen}>🎲 產生隨機代碼</button>
+  <label className="fld" style=${{marginTop:18}}>🔑 Anthropic API Key（僅存於本機）
+   <input className="in" type="password" autoComplete="off" placeholder="sk-ant-…" value=${k} onChange=${e=>setK(e.target.value.trim())} />
+   <small>目前只先儲存、尚未啟用，AI 建議暫時仍顯示備用小語。</small>
+  </label>
+  <div className="btns"><button className="btn" onClick=${onClose}>關閉</button><button className="btn pri" onClick=${()=>onSave(c,k)}>儲存</button></div>
+ </div></div>`;
+}
+
+function App(){
+ const now=new Date();
+ const [ym,setYm]=useState({y:now.getFullYear(),m:now.getMonth()});
+ const [sel,setSel]=useState(keyOf(now.getFullYear(),now.getMonth(),now.getDate()));
+ const [open,setOpen]=useState(false);
+ const [entries,setEntries]=useState(()=>{try{return JSON.parse(localStorage.getItem('diary-v1')||'{}');}catch(_){return {};}});
+ const [adv,busy,ask,setAdv]=useAdvice();
+ useEffect(()=>{setAdv('');},[sel]);
+ const [code,setCode]=useState(()=>localStorage.getItem('diary-sync')||'');
+ const [akey,setAkey]=useState(()=>localStorage.getItem('diary-akey')||'');
+ const [cfg,setCfg]=useState(false);
+ const [st,setSt]=useState('');
+ const cloud=CLOUD_READY&&!!code;
+ useEffect(()=>{
+  if(!cloud){setSt(CLOUD_READY?'📱 僅存本機（尚未設定同步代碼）':'📱 僅存本機');return;}
+  let col;
+  try{col=entriesCol(code);}catch(_){setSt('⚠️ Firebase 設定有誤或無法連線');return;}
+  setSt('☁️ 連線中…');
+  return col.onSnapshot(snap=>{
+   const remote={};snap.forEach(x=>{remote[x.id]=x.data();});
+   setEntries(prev=>{
+    const next={...remote};
+    Object.keys(prev).forEach(k=>{
+     const a=prev[k],b=remote[k];
+     if(!b||(a.updatedAt||0)>(b.updatedAt||0)){next[k]=a;col.doc(k).set(a).catch(()=>{});}
+    });
+    try{localStorage.setItem('diary-v1',JSON.stringify(next));}catch(_){}
+    return next;
+   });
+   setSt(snap.metadata.hasPendingWrites?'☁️ 同步中…':'☁️ 已同步');
+  },err=>setSt('⚠️ 同步失敗：'+(err.code||'請檢查設定')));
+ },[code]);
+ const saveCfg=(c,k)=>{localStorage.setItem('diary-sync',c);localStorage.setItem('diary-akey',k);setCode(c);setAkey(k);setCfg(false);};
+
+ const save=d=>{
+  const v={...d,updatedAt:Date.now()};
+  const next={...entries,[sel]:v};
+  try{localStorage.setItem('diary-v1',JSON.stringify(next));}catch(_){if(!cloud){alert('儲存空間不足，請移除部分照片後再試');return;}}
+  setEntries(next);setOpen(false);
+  if(cloud){
+   setSt('☁️ 同步中…');
+   try{entriesCol(code).doc(sel).set(v).then(()=>setSt('☁️ 已同步')).catch(e=>setSt('⚠️ 同步失敗：'+(e.code||'請檢查設定')));}
+   catch(_){setSt('⚠️ Firebase 設定有誤或無法連線');}
+  }
+ };
+ const th=MONTH_THEMES[ym.m];
+ const bg=th.img?'url('+th.img+')':'linear-gradient(160deg,'+th.g[0]+','+th.g[1]+')';
+ const first=new Date(ym.y,ym.m,1).getDay();
+ const days=new Date(ym.y,ym.m+1,0).getDate();
+ const cells=[...Array(first).fill(null),...Array.from({length:days},(_,i)=>i+1)];
+ const move=n=>{const d=new Date(ym.y,ym.m+n,1);setYm({y:d.getFullYear(),m:d.getMonth()});};
+ const todayKey=keyOf(now.getFullYear(),now.getMonth(),now.getDate());
+ const e=entries[sel];const [sy,sm,sd]=sel.split('-').map(Number);
+
+ return html`<div className="app">
+  <div className="hero" style=${{background:bg,backgroundSize:'cover',backgroundPosition:'center'}}>
+   <div className="bar"><button className="gear" onClick=${()=>setCfg(true)}>⚙︎ 設定</button><span>${st}</span></div>
+   <div className="mh"><button onClick=${()=>move(-1)}>‹</button><h1>${ym.y} ・ ${ym.m+1} 月</h1><button onClick=${()=>move(1)}>›</button></div>
+   <div className="grid">
+    ${WD.map(w=>html`<div key=${w} className="wd">${w}</div>`)}
+    ${cells.map((d,i)=>{
+     if(!d)return html`<div key=${'e'+i}></div>`;
+     const k=keyOf(ym.y,ym.m,d);
+     return html`<button key=${k} className=${'day'+(hasContent(entries[k])?' has':'')+(k===todayKey?' today':'')+(k===sel?' sel':'')} onClick=${()=>{setSel(k);setOpen(true);}}>${d}</button>`;
+    })}
+   </div>
+  </div>
+  <div className="main">
+   <div className="card">
+    <div className="dt">${sm} 月 ${sd} 日${sel===todayKey?' ・ 今天':''}</div>
+    ${hasContent(e)?html`
+     <div className="row">
+      <div>
+       <h2 className="ttl">${e.mood} ${e.title||'（未命名）'}</h2>
+       <p className="ex">${e.text||'這天只留下了一張照片。'}</p>
+      </div>
+      ${e.photo&&html`<img className="thumb" src=${e.photo} alt="" />`}
+     </div>
+     <div className="btns">
+      <button className="btn" onClick=${()=>setOpen(true)}>編輯</button>
+      <button className="btn" onClick=${()=>ask(e)}>✨ 請 AI 給我溫暖建議</button>
+     </div>
+     ${(busy||adv)&&html`<div className="ai">${busy?'AI 正在輕輕想著你的話…':adv}</div>`}
+    `:html`
+     <div className="empty">這一天還是一頁空白 🌿<br/>點一下日期，寫下今天的心情吧。</div>
+     <div className="btns"><button className="btn pri" onClick=${()=>setOpen(true)}>開始寫日記</button></div>
+    `}
+   </div>
+  </div>
+  ${open&&html`<${Editor} key=${sel} dateKey=${sel} entry=${e} onSave=${save} onClose=${()=>setOpen(false)} />`}
+  ${cfg&&html`<${Settings} code=${code} akey=${akey} ready=${CLOUD_READY} onSave=${saveCfg} onClose=${()=>setCfg(false)} />`}
+ </div>`;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
+</script>
+</body>
+</html>
