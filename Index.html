@@ -79,13 +79,14 @@ const html=htm.bind(React.createElement);
  5. 在每台裝置開啟本檔 →「⚙︎ 設定」→ 填入相同的「同步代碼」→ 儲存，即會自動雙向同步
  （此規則沒有登入機制，同步代碼就等於密碼，請設定得長且隨機，並勿分享給他人）
 =========================================================================== */
-const firebaseConfig={
- apiKey:'',
- authDomain:'',
- projectId:'',
- storageBucket:'',
- messagingSenderId:'',
- appId:''
+const firebaseConfig = {
+  apiKey: "AIzaSyCNArX2GGNEB4ecNQeqGH0qOTSTtXlGr0w",
+  authDomain: "my-diary-eb438.firebaseapp.com",
+  databaseURL: "https://my-diary-eb438-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "my-diary-eb438",
+  storageBucket: "my-diary-eb438.firebasestorage.app",
+  messagingSenderId: "1095858500717",
+  appId: "1:1095858500717:web:da2d1d06e23c6ddd707b64"
 };
 const CLOUD_READY=!!(firebaseConfig.apiKey&&firebaseConfig.projectId);
 function getDb(){if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);return firebase.database();}
