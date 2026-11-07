@@ -62,24 +62,11 @@ textarea.in{border:1px solid var(--line);border-radius:12px;padding:12px;font-si
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script>
 const {useState,useEffect}=React;
 const html=htm.bind(React.createElement);
 
-/* ================= ☁️ Firebase 設定（貼上你的設定即可啟用雲端同步）=================
- 1. 前往 https://console.firebase.google.com 建立專案
- 2. 左側「建構」→ Firestore Database → 建立資料庫
- 3. 專案設定（齒輪）→ 一般 → 「您的應用程式」→ 新增網頁應用程式（</> 圖示）
-    → 把畫面上 firebaseConfig 的各欄位，複製貼到下方對應的引號裡
- 4. Firestore 的「規則」分頁，貼上以下內容後按「發布」：
-      rules_version = '2';
-      service cloud.firestore { match /databases/{db}/documents {
-        match /diaries/{code}/entries/{id} { allow read, write: if true; }
-      } }
- 5. 在每台裝置開啟本檔 →「⚙︎ 設定」→ 填入相同的「同步代碼」→ 儲存，即會自動雙向同步
- （此規則沒有登入機制，同步代碼就等於密碼，請設定得長且隨機，並勿分享給他人）
-=========================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyCNArX2GGNEB4ecNQeqGH0qOTSTtXlGr0w",
   authDomain: "my-diary-eb438.firebaseapp.com",
@@ -93,8 +80,6 @@ const CLOUD_READY=!!(firebaseConfig.apiKey&&firebaseConfig.projectId);
 function getDb(){if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);return firebase.database();}
 const entriesRef = code => getDb().ref('diaries/' + code + '/entries');
 
-
-// ===== 每月版面設計：之後把圖片填進 img（網址或 data URI）即可 =====
 const MONTH_THEMES=[
  {g:['#9db4c0','#d5e0e6'],img:''},{g:['#d4a5a5','#f1d9d4'],img:''},{g:['#a8c3a0','#dfeadb'],img:''},
  {g:['#e3b7c4','#f6e1e6'],img:''},{g:['#9cc5a1','#d9ecd2'],img:''},{g:['#8fbfc9','#d3ebee'],img:''},
@@ -103,7 +88,6 @@ const MONTH_THEMES=[
 ];
 const MOODS=[['😊','開心'],['🌿','平靜'],['☕','輕鬆'],['☁️','疲憊']];
 const WD=['日','一','二','三','四','五','六'];
-// 每日金句：以日期（自 1970 年起的天數）× 17 對 40 取餘數，同一天固定、連續 40 天內絕不重複
 const QUOTES=[
  ['Today is a good day to begin again.','今天是重新開始的好日子。'],
  ['Small steps still move you forward.','再小的一步，也是在前進。'],
@@ -172,7 +156,6 @@ function compress(file){
  });
 }
 
-// 即時 AI 回饋：把標題、內文、心情交給 Claude 分析；若無法連線則退回內建溫柔語句
 function useAdvice(){
  const [t,setT]=useState('');const [busy,setBusy]=useState(false);
  const ask=async(d)=>{
@@ -256,7 +239,7 @@ function App(){
  useEffect(()=>{
   if(!cloud){setSt(CLOUD_READY?'📱 僅存本機（尚未設定同步代碼）':'📱 僅存本機');return;}
   let ref;
-  try{ref=entriesRef(code);}catch(_){setSt('⚠️ Firebase 設定有误或無法連線');return;}
+  try{ref=entriesRef(code);}catch(_){setSt('⚠️ Firebase 設定有誤或無法連線');return;}
   setSt('☁️ 連線中…');
   const listener = ref.on('value', snap => {
    const remote = snap.val() || {};
