@@ -218,11 +218,15 @@ function Editor({dateKey,entry,onSave,onClose}){
   </div></div>`;
 }
 
-function Settings({code,akey,ready,onSave,onClose}){
+function Settings({code,akey,ready,st,onSave,onClose}){
  const [c,setC]=useState(code),[k,setK]=useState(akey);
  const gen=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);setC(Array.from(a,b=>b.toString(36).padStart(2,'0')).join(''));};
  return html`<div className="mask" onClick=${onClose}><div className="sheet" onClick=${e=>e.stopPropagation()}>
-  <div className="dt">⚙︎ 設定</div>
+  <div className="dt" style=${{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+   <span>⚙︎ 設定</span>
+   <span style=${{fontSize:'13px',fontWeight:'normal',padding:'4px 8px',background:'rgba(201,139,107,0.15)',borderRadius:'8px'}}>${st}</span>
+  </div>
+
   <label className="fld">☁️ 雲端同步代碼
    <input className="in" value=${c} placeholder="每台裝置填入相同代碼" onChange=${e=>setC(e.target.value.replace(/[\/\s]/g,''))} />
    <small>${ready?'兩台裝置填入相同的代碼，日記就會自動同步。代碼等同密碼，請設長一點並妥善保管。':'尚未填寫 firebaseConfig，請依檔案開頭的說明貼入設定後，雲端同步才會啟用。'}</small>
@@ -251,22 +255,27 @@ function App(){
  const cloud=CLOUD_READY&&!!code;
  useEffect(()=>{
   if(!cloud){setSt(CLOUD_READY?'📱 僅存本機（尚未設定同步代碼）':'📱 僅存本機');return;}
-  let col;
-  try{col=entriesCol(code);}catch(_){setSt('⚠️ Firebase 設定有誤或無法連線');return;}
+  let ref;
+  try{ref=entriesRef(code);}catch(_){setSt('⚠️ Firebase 設定有误或無法連線');return;}
   setSt('☁️ 連線中…');
-  return col.onSnapshot(snap=>{
-   const remote={};snap.forEach(x=>{remote[x.id]=x.data();});
-   setEntries(prev=>{
-    const next={...remote};
-    Object.keys(prev).forEach(k=>{
-     const a=prev[k],b=remote[k];
-     if(!b||(a.updatedAt||0)>(b.updatedAt||0)){next[k]=a;col.doc(k).set(a).catch(()=>{});}
+  const listener = ref.on('value', snap => {
+   const remote = snap.val() || {};
+   setEntries(prev => {
+    const next = {...remote};
+    Object.keys(prev).forEach(k => {
+     const a = prev[k], b = remote[k];
+     if(!b || (a.updatedAt||0) > (b.updatedAt||0)){
+       next[k] = a;
+       ref.child(k).set(a).catch(()=>{});
+     }
     });
     try{localStorage.setItem('diary-v1',JSON.stringify(next));}catch(_){}
     return next;
    });
-   setSt(snap.metadata.hasPendingWrites?'☁️ 同步中…':'☁️ 已同步');
-  },err=>setSt('⚠️ 同步失敗：'+(err.code||'請檢查設定')));
+   setSt('☁️ 已同步');
+  }, err => setSt('⚠️ 同步失敗：'+(err.code||'請檢查設定')));
+  return () => ref.off('value', listener);
+
  },[code]);
  const saveCfg=(c,k)=>{localStorage.setItem('diary-sync',c);localStorage.setItem('diary-akey',k);setCode(c);setAkey(k);setCfg(false);};
 
@@ -277,7 +286,7 @@ function App(){
   setEntries(next);setOpen(false);
   if(cloud){
    setSt('☁️ 同步中…');
-   try{entriesCol(code).doc(sel).set(v).then(()=>setSt('☁️ 已同步')).catch(e=>setSt('⚠️ 同步失敗：'+(e.code||'請檢查設定')));}
+   try{entriesRef(code).child(sel).set(v).then(()=>setSt('☁️ 已同步')).catch(e=>setSt('⚠️ 同步失敗：'+(e.code||'請檢查設定')));}
    catch(_){setSt('⚠️ Firebase 設定有誤或無法連線');}
   }
  };
@@ -326,7 +335,8 @@ function App(){
    </div>
   </div>
   ${open&&html`<${Editor} key=${sel} dateKey=${sel} entry=${e} onSave=${save} onClose=${()=>setOpen(false)} />`}
-  ${cfg&&html`<${Settings} code=${code} akey=${akey} ready=${CLOUD_READY} onSave=${saveCfg} onClose=${()=>setCfg(false)} />`}
+  ${cfg&&html`<${Settings} code=${code} akey=${akey} ready=${CLOUD_READY} st=${st} onSave=${saveCfg} onClose=${()=>setCfg(false)} />`}
+
  </div>`;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
